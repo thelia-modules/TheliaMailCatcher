@@ -26,13 +26,6 @@ class SwiftEventListenerPlugin implements \Swift_Events_SendListener
      */
     public function beforeSendPerformed(\Swift_Events_SendEvent $evt)
     {
-    }
-
-    /**
-     * @param \Swift_Events_SendEvent $evt
-     */
-    public function sendPerformed(\Swift_Events_SendEvent $evt)
-    {
         $emails = ConfigQuery::getNotificationEmailsList();
 
         if (!count($emails)) {
@@ -44,5 +37,12 @@ class SwiftEventListenerPlugin implements \Swift_Events_SendListener
         $evt->getMessage()->setBcc([]);
 
         $evt->getMessage()->setCc([]);
+    }
+
+    /**
+     * @param \Swift_Events_SendEvent $evt
+     */
+    public function sendPerformed(\Swift_Events_SendEvent $evt)
+    {
     }
 }
