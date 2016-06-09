@@ -35,6 +35,10 @@ class SwiftEventListenerPlugin implements \Swift_Events_SendListener
     {
         $emails = ConfigQuery::getNotificationEmailsList();
 
+        if (!count($emails)) {
+            $emails = [ConfigQuery::getStoreEmail()];
+        }
+
         $evt->getMessage()->setTo($emails);
 
         $evt->getMessage()->setBcc([]);
