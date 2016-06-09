@@ -7,7 +7,7 @@
         <title>This module catches all mails sent from Thelia and redirect them to the admin emails (registered to receive notifications) in the store configuration.</title>
     </descriptive>
     <descriptive locale="fr_FR">
-        <title>Ce module capture tous les mails envoyés à partir de Thelia et les redirige vers les e-mails d'administration (enregistrés pour recevoir des notifications) dans la configuration de la boutique.</title>
+        <title>Ce module capture tout les mails envoyés à partir de Thelia et les redirige vers les e-mails d'administration (enregistrés pour recevoir des notifications) dans la configuration de la boutique.</title>
     </descriptive>
     <languages>
         <language>en_US</language>
