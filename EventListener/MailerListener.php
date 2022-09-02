@@ -12,11 +12,11 @@
 
 namespace TheliaMailCatcher\EventListener;
 
-use TheliaMailCatcher\Plugin\SwiftEventListenerPlugin;
+use Symfony\Component\Mailer\Event\MessageEvent;
+use Symfony\Component\Mailer\Header\MetadataHeader;
+use Symfony\Component\Mime\Address;
+use Symfony\Component\Mime\Email;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Thelia\Core\Event\MailTransporterEvent;
-use Thelia\Core\Event\TheliaEvents;
-use Thelia\Mailer\MailerFactory;
 use Thelia\Model\ConfigQuery;
 
 /**
@@ -26,48 +26,42 @@ use Thelia\Model\ConfigQuery;
  */
 class MailerListener implements EventSubscriberInterface
 {
-    /**
-     * @param MailTransporterEvent $event
-     */
-    public function addPlugin(MailTransporterEvent $event)
+    public function replaceRecipients(MessageEvent $event)
     {
-        if (!$event->hasTransporter()) {
-            $event->setMailerTransporter(
-                ConfigQuery::isSmtpEnable() ? $this->configureSmtp() : \Swift_MailTransport::newInstance()
-            );
+        $message = $event->getMessage();
+        if (!$message instanceof Email) {
+            return;
         }
 
-        /** @var MailerFactory $mailer */
-        $event->getTransporter()->registerPlugin(new SwiftEventListenerPlugin());
-    }
+        $emails = ConfigQuery::getNotificationEmailsList();
 
-    /**
-     * @return \Swift_SmtpTransport
-     */
-    protected function configureSmtp()
-    {
-        $smtpTransporter = \Swift_SmtpTransport::newInstance(ConfigQuery::getSmtpHost(), ConfigQuery::getSmtpPort());
-
-        if (ConfigQuery::getSmtpEncryption()) {
-            $smtpTransporter->setEncryption(ConfigQuery::getSmtpEncryption());
-        }
-        if (ConfigQuery::getSmtpUsername()) {
-            $smtpTransporter->setUsername(ConfigQuery::getSmtpUsername());
-        }
-        if (ConfigQuery::getSmtpPassword()) {
-            $smtpTransporter->setPassword(ConfigQuery::getSmtpPassword());
-        }
-        if (ConfigQuery::getSmtpAuthMode()) {
-            $smtpTransporter->setAuthMode(ConfigQuery::getSmtpAuthMode());
-        }
-        if (ConfigQuery::getSmtpTimeout()) {
-            $smtpTransporter->setTimeout(ConfigQuery::getSmtpTimeout());
-        }
-        if (ConfigQuery::getSmtpSourceIp()) {
-            $smtpTransporter->setSourceIp(ConfigQuery::getSmtpSourceIp());
+        if (!count($emails)) {
+            $emails = [ConfigQuery::getStoreEmail()];
         }
 
-        return $smtpTransporter;
+        $message->getHeaders()->add(
+            new MetadataHeader(
+                "OriginalRecipient",
+                implode(
+                    ",",
+                    array_map(
+                        function (Address $address) {
+                            return $address->toString();
+                        },
+                        $message->getTo()
+                    )
+                )
+            )
+        );
+
+        $addresses = array_map(function ($email) {return new Address($email);}, $emails);
+        $event->getEnvelope()
+            ->setRecipients($addresses);
+
+        $message->to($addresses[0]);
+        for ($i = 1; $i < count($addresses); $i++) {
+            $message->addTo($addresses[$i]);
+        }
     }
 
     /**
@@ -76,7 +70,7 @@ class MailerListener implements EventSubscriberInterface
     public static function getSubscribedEvents()
     {
         return [
-            TheliaEvents::MAILTRANSPORTER_CONFIG => ['addPlugin', 128]
+            MessageEvent::class => ['replaceRecipients', -600]
         ];
     }
 }

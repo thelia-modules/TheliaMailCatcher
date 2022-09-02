@@ -12,6 +12,7 @@
 
 namespace TheliaMailCatcher;
 
+use Symfony\Component\DependencyInjection\Loader\Configurator\ServicesConfigurator;
 use Thelia\Module\BaseModule;
 
 /**
@@ -23,4 +24,16 @@ class TheliaMailCatcher extends BaseModule
 {
     /** @var string */
     const DOMAIN_NAME = 'theliamailcatcher';
+
+    /**
+     * Defines how services are loaded in your modules.
+     */
+    public static function configureServices(ServicesConfigurator $servicesConfigurator): void
+    {
+        $servicesConfigurator->load(self::getModuleCode().'\\', __DIR__)
+            ->exclude([THELIA_MODULE_DIR.ucfirst(self::getModuleCode()).'/I18n/*'])
+            ->autowire(true)
+            ->autoconfigure(true);
+    }
+
 }
